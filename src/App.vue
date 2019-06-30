@@ -1,16 +1,81 @@
 <template>
   <div id="app">
-    <v-tree />
+    <vtree :navs="navs"
+           :pList="list"
+           @getDataById="getDataById">
+    </vtree>
   </div>
 </template>
 
 <script>
-import VTree from '@/packages/tree-pulgin/src/Tree'
-
 export default {
   name: 'app',
-  components: {
-    VTree
+  data() {
+    return {
+      navs: [
+        {
+          name: '山东移动',
+          id: 1
+        },
+        {
+          name: '济南营业部',
+          id: 12
+        },
+        {
+          name: '滨洲营业部',
+          id: 123
+        }
+      ],
+      list: {
+        orgList: [
+          {
+            name: '滨洲县',
+            id: 1231,
+            count: 2
+          },
+          {
+            name: '滨洲县2',
+            id: 1232,
+            count: 4
+          }
+        ],
+        userList: [
+          {
+            name: '邓勇',
+            userId: '1233'
+          }
+        ]
+      }
+    }
+  },
+  methods: {
+    getDataById(id) {
+      this.list = {
+        orgList: [
+          {
+            name: '济南县',
+            id: 121,
+            count: 0
+          },
+          {
+            name: '滨洲县2',
+            id: 122,
+            count: 5
+          },
+          {
+            name: '滨洲营业部',
+            id: 123,
+            count: 6
+          }
+        ],
+        userList: [
+          {
+            name: 'aoliao',
+            userId: '124'
+          }
+        ]
+      }
+    }
   }
 }
 </script>

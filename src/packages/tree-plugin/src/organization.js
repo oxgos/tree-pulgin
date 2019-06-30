@@ -1,4 +1,4 @@
-/*navs = [
+/* navs = [
   {
     name: '山东移动'
     id: 1
@@ -28,7 +28,7 @@ currentDepart = {
       userId: '1234567'
     }
   ]
-}*/
+} */
 
 class Observer {
   constructor () {
@@ -59,8 +59,8 @@ class Observer {
       return
     }
     if (fn) {
-      let len = this.message[eventName].length,
-          i   = 0
+      let len = this.message[eventName].length
+      let i = 0
       for (; i < len; i++) {
         this.message[eventName][i] === fn && this.message[eventName].splice(i, 1)
       }
@@ -70,7 +70,7 @@ class Observer {
   }
 }
 
-class Stuff {
+export class Stuff {
   constructor ({ id, name }, pObserver) {
     this.id = id
     this.name = name
@@ -94,12 +94,14 @@ class Stuff {
   }
 }
 
-class Department {
-  constructor ({ id, name }, pObserver) {
+export class Department {
+  constructor ({ id, name, count }, pObserver) {
     this.id = id
     this.name = name
     // 0不选,1半选,2全选
     this.status = 0
+    // 部门人数
+    this.count = count
     // 子类
     this.children = []
     // 判断是否已齐全数据
@@ -111,7 +113,7 @@ class Department {
   initEvent () {
     this.sObserver.onEvent('changeParent', () => {
       this.juggleStatus()
-      this.pObserver.emitEvent('changeParent')
+      this.pObserver && this.pObserver.emitEvent('changeParent')
     })
     if (this.pObserver) {
       this.pObserver.onEvent('changeChild', (flag) => {
@@ -129,9 +131,9 @@ class Department {
   }
   // 判断自身状态
   juggleStatus() {
-    let count = 0,
-        len   = this.children.length,
-        i     = 0
+    let count = 0
+    let len = this.children.length
+    let i = 0
     for (; i < len; i++) {
       let child = this.children[i]
       if (child instanceof Department) {
@@ -167,27 +169,29 @@ class Department {
   }
 }
 
-class Organ {
+export class Organ {
   constructor (navs, departs, stuffs) {
     this.organization = null
     this.findDepart = null
     this.init(navs, departs, stuffs)
   }
   init (navs, departs, stuffs) {
-    let temp = null,
-        i    = 0,
-        len  = navs.length
+    let temp = null
+    let i = 0
+    let len = navs.length
     for (; i < len; i++) {
       let depart = null
       if (i === 0) {
         this.organization = temp = new Department({
           id: navs[i].id,
-          name: navs[i].name
+          name: navs[i].name,
+          count: navs[i].count
         })
       } else {
         depart = new Department({
           id: navs[i].id,
-          name: navs[i].name
+          name: navs[i].name,
+          count: navs[i].count
         }, temp.sObserver)
         temp.addChild(depart)
         temp = depart
@@ -197,7 +201,8 @@ class Organ {
     departs.forEach(depart => {
       temp.addChild(new Department({
         id: depart.id,
-        name: depart.name
+        name: depart.name,
+        count: depart.count
       }, temp.sObserver))
     })
     stuffs.forEach(stuff => {
@@ -210,19 +215,17 @@ class Organ {
   }
   // 获取展示数据列表
   getDisplayList(id) {
-    return new Promise((resolve, reject) => {
-      this.getDepartById(id)
-      if (this.findDepart) {
-        if (this.findDepart.init) {
-          resolve(this.findDepart.children)
-        } else {
-          // TODO:
-          resolve(null)
-        }
+    this.getDepartById(id)
+    if (this.findDepart) {
+      if (this.findDepart.init) {
+        return this.findDepart.children
       } else {
-        reject('查找id有误')
+        // 请求数据
+        return null
       }
-    })
+    } else {
+      console.log('查找id有误')
+    }
   }
   getDepartById(id) {
     this._clearFindDepart()
@@ -232,8 +235,8 @@ class Organ {
     if (this.findDepart) {
       return
     }
-    let len = list.length,
-        i   = 0
+    let len = list.length
+    let i = 0
     for (; i < len; i++) {
       if (list[i] instanceof Department) {
         if (list[i].id === id) {
@@ -249,5 +252,3 @@ class Organ {
     this.findDepart = null
   }
 }
-
-export default Organ

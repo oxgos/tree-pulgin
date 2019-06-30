@@ -2,9 +2,7 @@
   <div id="Tree">
     <nav>
       <ul>
-        <li>山东移动</li>
-        <li>济南营业部</li>
-        <li>滨县营业部</li>
+        <li v-for="(item,i) in navs" :key="i" @click="changeDepart(item.id)">{{item.name}}</li>
       </ul>
     </nav>
     <div class="wrapper">
@@ -13,7 +11,7 @@
           <span class="item__left__btn" :class="getStatus(item)"></span>
           <h4 class="item__left__name">{{item.name}}</h4>
         </div>
-        <div class="item__right" v-if="item.hasOwnProperty('children')">
+        <div class="item__right" v-if="item.hasOwnProperty('children')" @click="toLowerLevel(item)">
           <p class="item__right__count">{{item.count}}</p>
           <span class="item__right__arrow"></span>
         </div>
@@ -23,46 +21,28 @@
 </template>
 
 <script>
-import Organ from './organization'
+import { Organ, Department, Stuff } from './organization'
 
 export default {
-  name: 'Tree',
+  name: 'vtree',
+  props: {
+    navs: {
+      type: Array,
+      default: () => []
+    },
+    pList: {
+      type: Object,
+      default: () => {}
+    }
+  },
   data() {
     return {
-      navs: [
-        {
-          name: '山东移动',
-          id: 1
-        },
-        {
-          name: '滨洲',
-          id: 12
-        }
-      ],
-      orgList: [
-        {
-          name: '滨洲县',
-          id: 123,
-          count: 2
-        },
-        {
-          name: '滨洲县2',
-          id: 124,
-          count: 4
-        }
-      ],
-      userList: [
-        {
-          name: '邓勇',
-          userId: '1234567'
-        }
-      ],
       list: null,
       organ: null
     }
   },
   async created() {
-    this.organ = new Organ(this.navs, this.orgList, this.userList)
+    this.organ = new Organ(this.navs, this.pList.orgList, this.pList.userList)
     try {
       this.list = await this.organ.getDisplayList(
         this.navs[this.navs.length - 1].id
@@ -74,6 +54,24 @@ export default {
   methods: {
     toggleStatus(item) {
       item.toggleStatus()
+    },
+    // 导航切换部门
+    changeDepart(id) {
+      let list = this.organ.getDisplayList(id)
+      if (!list) {
+        this.$emit('getDataById', id)
+      } else {
+        this.list = list
+      }
+    },
+    // 到下一层级
+    toLowerLevel(depart) {
+      if (depart.init) {
+        this.list = depart.children
+      } else {
+        this.organ.findDepart = depart
+        this.$emit('getDataById', depart.id)
+      }
     },
     getStatus(item) {
       let className = ''
@@ -93,6 +91,31 @@ export default {
       }
       return className
     }
+  },
+  watch: {
+    pList(newVal) {
+      let currentDepart = this.organ.findDepart
+      let orignalData = currentDepart.children[0]
+      newVal.orgList.forEach(depart => {
+        if (orignalData && orignalData.id === depart.id) {
+          orignalData.count = depart.count
+        } else {
+          currentDepart.addChild(new Department({
+            id: depart.id,
+            name: depart.name,
+            count: depart.count
+          }, currentDepart.sObserver))
+        }
+      })
+      newVal.userList.forEach(stuff => {
+        currentDepart.addChild(new Stuff({
+          id: stuff.userId,
+          name: stuff.name
+        }, currentDepart.sObserver))
+      })
+      currentDepart.initOk()
+      this.list = currentDepart.children
+    }
   }
 }
 </script>
@@ -108,6 +131,7 @@ export default {
       list-style: none;
       li {
         display: inline;
+        cursor: pointer;
         &:not(:last-child)::after {
           content: ">";
           padding: 0 4px;
