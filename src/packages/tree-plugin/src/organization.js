@@ -92,6 +92,13 @@ export class Stuff {
     this.status = !this.status
     this.pObserver.emitEvent('changeParent')
   }
+  setStatus(flag) {
+    if (flag === 2) {
+      this.status = true
+    } else {
+      this.status = false
+    }
+  }
 }
 
 export class Department {
@@ -167,6 +174,9 @@ export class Department {
     this.sObserver.emitEvent('changeChild', this.status)
     this.pObserver && this.pObserver.emitEvent('changeParent')
   }
+  setStatus(flag) {
+    this.status = flag
+  }
 }
 
 export class Organ {
@@ -229,21 +239,29 @@ export class Organ {
   }
   getDepartById(id) {
     this._clearFindDepart()
-    this.deepFind(this.organization.children, id)
+    this.deepFind(this.organization, id)
   }
   deepFind(list, id) {
     if (this.findDepart) {
       return
     }
-    let len = list.length
-    let i = 0
-    for (; i < len; i++) {
-      if (list[i] instanceof Department) {
-        if (list[i].id === id) {
-          this.findDepart = list[i]
-          break
-        } else {
-          this.deepFind(list[i].children, id)
+    if (Object.prototype.toString.call(list) === '[object Object]') {
+      if (list.id === id) {
+        this.findDepart = list
+      } else {
+        this.deepFind(list.children, id)
+      }
+    } else {
+      let len = list.length
+      let i = 0
+      for (; i < len; i++) {
+        if (list[i] instanceof Department) {
+          if (list[i].id === id) {
+            this.findDepart = list[i]
+            break
+          } else {
+            this.deepFind(list[i].children, id)
+          }
         }
       }
     }

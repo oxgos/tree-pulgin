@@ -2,7 +2,7 @@
   <div id="Tree">
     <nav>
       <ul>
-        <li v-for="(item,i) in navs" :key="i" @click="changeDepart(item.id)">{{item.name}}</li>
+        <li v-for="(item,i) in navs" :key="i" @click="changeDepart(item.id, i)">{{item.name}}</li>
       </ul>
     </nav>
     <div class="wrapper">
@@ -38,7 +38,9 @@ export default {
   data() {
     return {
       list: null,
-      organ: null
+      organ: null,
+      selectedDepart: [],
+      selectedStuff: []
     }
   },
   async created() {
@@ -54,15 +56,17 @@ export default {
   methods: {
     toggleStatus(item) {
       item.toggleStatus()
+      this.handleSelected(item)
     },
     // 导航切换部门
-    changeDepart(id) {
+    changeDepart(id, i) {
       let list = this.organ.getDisplayList(id)
       if (!list) {
         this.$emit('getDataById', id)
       } else {
         this.list = list
       }
+      this.$emit('changeDepart', i)
     },
     // 到下一层级
     toLowerLevel(depart) {
@@ -72,6 +76,33 @@ export default {
         this.organ.findDepart = depart
         this.$emit('getDataById', depart.id)
       }
+      this.$emit('toLowerLevel', depart)
+    },
+    handleSelected(item) {
+      if (item instanceof Department) {
+        if (item.status === 2) {
+          this.saveSelected(item, 'Depart')
+        } else {
+          this.cancelSelected(item, 'Depart')
+        }
+      } else {
+        if (item.status) {
+          this.saveSelected(item, 'Stuff')
+        } else {
+          this.cancelSelected(item, 'Stuff')
+        }
+      }
+    },
+    // 保存选择
+    saveSelected(item, type) {
+      this[`selected${type}`].push(item)
+    },
+    // 取消选择
+    cancelSelected(item, type) {
+      let index = this[`selected${type}`].findIndex((value) => value.id === item.id)
+      if (index > -1) {
+        this[`selected${type}`].splice(index, 1)
+      } 
     },
     getStatus(item) {
       let className = ''
@@ -100,18 +131,22 @@ export default {
         if (orignalData && orignalData.id === depart.id) {
           orignalData.count = depart.count
         } else {
-          currentDepart.addChild(new Department({
+          let _depart = new Department({
             id: depart.id,
             name: depart.name,
             count: depart.count
-          }, currentDepart.sObserver))
+          }, currentDepart.sObserver)
+          _depart.setStatus(currentDepart.status)
+          currentDepart.addChild(_depart)
         }
       })
       newVal.userList.forEach(stuff => {
-        currentDepart.addChild(new Stuff({
+        let _stuff = new Stuff({
           id: stuff.userId,
           name: stuff.name
-        }, currentDepart.sObserver))
+        }, currentDepart.sObserver)
+        _stuff.setStatus(currentDepart.status)
+        currentDepart.addChild(_stuff)
       })
       currentDepart.initOk()
       this.list = currentDepart.children

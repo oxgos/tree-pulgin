@@ -2,6 +2,8 @@
   <div id="app">
     <vtree :navs="navs"
            :pList="list"
+           @changeDepart="toChangedepart"
+           @toLowerLevel="toLowerLevel"
            @getDataById="getDataById">
     </vtree>
   </div>
@@ -49,6 +51,15 @@ export default {
     }
   },
   methods: {
+    toChangedepart(index) {
+      this.navs = this.navs.slice(0, index + 1)
+    },
+    toLowerLevel(depart) {
+      this.navs.push({
+        id: depart.id,
+        name: depart.name
+      })
+    },
     getDataById(id) {
       this.list = {
         orgList: [
